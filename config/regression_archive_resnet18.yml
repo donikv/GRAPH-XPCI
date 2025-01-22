@@ -1,0 +1,31 @@
+args:
+  log: records/archive/regression_resnet18
+  path: <PATH_TO_SMALL_DATASET>
+  dataset: csv
+  train-csv: ./csv/archive/train.csv
+  test-csv: ./csv/archive/test.csv
+
+  normalize: true
+  balance-dataset: true
+  histogram-equalization: true
+  rgb: true
+  size: 1024
+  rotation: 45
+  perspective: 0.4
+
+  backbone-name: resnet18
+  regression: true
+  scat-upsample: false
+  model: VariableEncoderClassificationModelNew
+  
+  batch-size: 16
+  test-batch-size: 16
+  bn: true
+  device: cuda:0
+  epochs: 30
+  loss: mse
+  lr: 0.001
+  optimizer: adamw
+  scheduler: OneCycleLR
+
+python_file: training/regression.py
