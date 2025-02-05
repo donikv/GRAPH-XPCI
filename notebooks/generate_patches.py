@@ -44,7 +44,6 @@ def process_image(name, group, args, eq, pbar=None):
 
 def main(args):
     df = pd.read_csv(args.patches_csv_path)
-    df = df.tail(1000)
     df2 = pd.read_csv(args.images_csv_path)
 
     stacked = df
