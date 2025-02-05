@@ -23,6 +23,7 @@ The code used to load the dataset, load pre-trained models, run experiments, and
 ├── csv -> folder for storing csv files used for the evaluation procedures
 ├── config -> folder for storing .yml configuration files
 ├── notebooks -> collection of juypter notebooks used for testing and plotting
+│   ├── generate_patches.py -> used to generate patches to recreate patches dataset
 │   └── evaluation_protocols.ipynb -> used for generating results from the paper
 ├── training
 │   ├── regression.py -> training for CNN models
@@ -42,7 +43,8 @@ The code used to load the dataset, load pre-trained models, run experiments, and
 - Models and the datasets have to be downloaded from [here](https://puh.srce.hr/s/f8p5fnxTfcH4HXy).
 	- Models need to be placed in the `records` folder, .csv files (including the folder structure) into the `csv` folder
 	- Dataset can be placed anywhere on the disk, but the `path` argument that points to the root folder of the dataset needs to be changed in the .yml files or added to the training script as shown below
-
+    - ``` python notebooks/generate_patches.py --patches_csv_path=./csv/patches/[train.csv, test.csv] --images_csv_path=./csv/fresh/[train.csv, test.csv] --output_dir=[PATH_TO_SAVE_PATCHES] --root_dir=[PATH_TO_DATASET] --equalize``` -> Code used to generate the image patches, use `num_workers` argument to run the work in parallel
+    
 ## Examples
 
 Training a model from scratch on 1024x1024 images:
