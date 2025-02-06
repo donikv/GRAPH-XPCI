@@ -58,7 +58,7 @@ def main(args):
 
     stacked['new_original_image'] = stacked.original_image.map(lambda x: mapping[x])
     pbar = tqdm(stacked.groupby('new_original_image'), total=len(stacked.new_original_image.unique()), desc='Processing patches')
-    eq = Equalize(reference="../data/07_4001_3R1212_crop.rec.8bit.tif", ks=0, size=(329,329))
+    eq = Equalize(reference="./common/data/07_4001_3R1212_crop.rec.8bit.tif", ks=0, size=(329,329))
     if args.num_workers > 1:
         pool = Pool(args.num_workers)
         pool.starmap(process_image, [(name, group, args, eq) for name, group in pbar])
