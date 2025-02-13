@@ -1,7 +1,10 @@
+import sys,os
+sys.path.append(os.getcwd())
+print(os.path.dirname(sys.executable))
+
 import yaml
 import subprocess
 import shlex
-import sys 
 import argparse
 
 def parse_yaml(file_path):
@@ -21,7 +24,7 @@ def format_args(args):
     return formatted_args
 
 def call_python_file(file_path, args):
-    command = f"python {file_path} {' '.join(args)}"
+    command = f"{os.path.dirname(sys.executable)}/python {file_path} {' '.join(args)}"
     subprocess.run(command, shell=True)
 
 if __name__ == '__main__':
