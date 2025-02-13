@@ -288,7 +288,7 @@ class Trainer():
         targets, preds = [], []
 
         for batch_idx, (data, target) in (pbar := tqdm(enumerate(train_dataloader), total=len(train_dataloader), ncols=100)):
-            with torch.autocast(device_type=self.device, dtype=torch.float16):
+            with torch.autocast(device_type=self.device.type, dtype=torch.float16):
                 data, target = data.to(self.device), target.to(self.device)
                 if mixup_fn is not None:
                     data, target = mixup_fn(data, target)
