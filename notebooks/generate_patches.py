@@ -1,3 +1,6 @@
+import sys,os
+sys.path.append(os.getcwd())
+
 import torch
 import pandas as pd
 import os
