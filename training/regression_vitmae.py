@@ -1,3 +1,6 @@
+import sys,os
+sys.path.append(os.getcwd())
+
 import common.logger as logger
 import common.dataset as dataset
 import common.record as record
