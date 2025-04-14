@@ -12,6 +12,8 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from common.preprocessing import Equalize
 
+IMAGE_SIZE = 2560
+
 def get_patches(original_image, patch_dimensions):
     patches = {}
     for x,y,h,w in patch_dimensions:
@@ -19,10 +21,17 @@ def get_patches(original_image, patch_dimensions):
         patches[(x,y,h,w)] = patch
     return patches
 
-def get_dimensions(img_name):
+def get_dimensions(img_name, patch_size):
     _, name = os.path.split(img_name)
     name = name.split('.')[0]
     x,y,h,w = name.split('_')
+    if patch_size is not None:
+        x = max(0, int(x) + int(h)//2 - patch_size//2)
+        y = max(0, int(y) + int(w)//2 - patch_size//2)
+        x = min(x, IMAGE_SIZE-patch_size)
+        y = min(y, IMAGE_SIZE-patch_size)
+        h = patch_size
+        w = patch_size
     return int(x), int(y), int(h), int(w)
 
 def process_image(name, group, args, eq, pbar=None):
@@ -31,7 +40,7 @@ def process_image(name, group, args, eq, pbar=None):
     for i, row in group.iterrows():
         if pbar is not None:
             pbar.set_postfix({'patch': row.image})
-        x,y,h,w = get_dimensions(row.image)
+        x,y,h,w = get_dimensions(row.image, args.patch_size)
         patch = img[y:y+h, x:x+w]
         if args.equalize:
             patch = eq(patch)
@@ -47,6 +56,11 @@ def process_image(name, group, args, eq, pbar=None):
 
 def main(args):
     df = pd.read_csv(args.patches_csv_path)
+    df_new = pd.DataFrame()
+    if len(args.include) > 0:
+        for include in args.include:
+            df_new = pd.concat([df_new, df[df.image.str.contains(include)]])
+        df = df_new
     df2 = pd.read_csv(args.images_csv_path)
 
     stacked = df
@@ -68,9 +82,10 @@ def main(args):
     else:
         for name, group in pbar:
             process_image(name, group, args, eq, pbar)
-
-
     
+    csv_name = os.path.split(args.patches_csv_path)[-1]
+    df_filename = os.path.join(args.output_dir, csv_name)
+    df.to_csv(df_filename, index=False)
 
 if __name__ == '__main__':
     import argparse
@@ -81,6 +96,9 @@ if __name__ == '__main__':
     parser.add_argument('--root_dir', type=str, default='../data/images/train')
     parser.add_argument('--equalize', action='store_true', default=False)
     parser.add_argument('--num_workers', type=int, default=1)
+    parser.add_argument('--include', nargs='*', help='Images to include', default=[])
+    parser.add_argument('--patch_size', type=int, default=None, help='Patch size to use')
 
     args = parser.parse_args()
+
     main(args)

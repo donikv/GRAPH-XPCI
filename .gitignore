@@ -9,6 +9,7 @@ tmp_plots/
 test/
 data/biopsies_patches_fresh*
 data/biopsies_new_patches_192*
+data/**
 
 #VS code
 .vscode/
