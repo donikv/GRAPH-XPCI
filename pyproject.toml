@@ -1,0 +1,28 @@
+[project]
+name = "graph-xpci"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "matplotlib",
+    "pandas",
+    "seaborn",
+    "opencv-python",
+    "scikit-learn",
+    "grad-cam",
+    "scikit-image",
+    "tensorboard",
+    "pytorch-wavelets",
+    "PyWavelets",
+    "transformers",
+    "ipywidgets",
+    "timm",
+    "wandb",
+    "patchify",
+    "tabulate",
+    "jupyterlab"
+]
