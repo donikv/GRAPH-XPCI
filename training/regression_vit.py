@@ -11,6 +11,11 @@ import common.vit as vit
 import common.utils as utils
 
 import torch
+import torchvision
+torch.serialization.add_safe_globals([record.Record, dataset.BiopsiesDataset, 
+                                        torchvision.transforms.transforms.Compose, 
+                                        torchvision.transforms.transforms.ToTensor,
+                                        torchvision.transforms.transforms.RandomHorizontalFlip])
 import argparse
 from datetime import datetime as dt
 import matplotlib

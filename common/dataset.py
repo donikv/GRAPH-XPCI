@@ -21,7 +21,7 @@ from multiprocessing import Pool
 visualize_set_program(os.path.basename(__file__))
 
 def add_dataset_args(parser):
-    parser.add_argument("--path", type=str, default="./data", help="path to dataset root, default: ./data")
+    # parser.add_argument("--path", type=str, default="./data", help="path to dataset root, default: ./data")
     parser.add_argument("--list", type=str, default="./data/biopsies_list.txt", help="path to dataset file list, default: ./data/biopsies_list.txt")
     parser.add_argument("--size", type=int, default=1024, help="size of the cropped images, default: 256")
     parser.add_argument("--dataset", type=str, default='biopsies', help="which dataset to use, default: biopsies")
@@ -42,12 +42,19 @@ def add_dataset_args(parser):
     parser.add_argument("--random-scale-min", type=float, default=None, help="random scale lower bound factor, default: None")
 
     group = parser.add_argument_group("Csv dataset arguments")
-    group.add_argument("--train-csv", type=str, default="./csv/combined/train.csv", help="path to train csv file, default: ./csv/combined/train.csv")
-    group.add_argument("--test-csv", type=str, default="./csv/combined/test.csv", help="path to test csv file, default: ./csv/combined/test.csv")
+    group.add_argument("--train-csv", nargs='+', default=["./csv/combined/train.csv"], help="path to train csv files, default: ./csv/combined/train.csv")
+    group.add_argument("--test-csv", nargs='+', default=["./csv/combined/test.csv"], help="path to test csv files, default: ./csv/combined/test.csv")
+    parser.add_argument("--path", nargs='+', default=["./data"], help="path to datasets root, default: ./data")
+    parser.add_argument("--test-path", nargs='*', default=None, help="path to datasets root, default: ./data")
     group.add_argument("--balance-csv-combined", action='store_true', default=False, help="balance combined csv dataset, default: False")
     #parser.add_argument("--artifacts", action='store_true', default=False, help="remove imaging artifacts, default: False")
+    #group.add_argument("--train-csv", type=str, default="./csv/combined/train.csv", help="path to train csv file, default: ./csv/combined/train.csv")
+    #group.add_argument("--test-csv", type=str, default="./csv/combined/test.csv", help="path to test csv file, default: ./csv/combined/test.csv")
 
 def parse_dataset_args(args):
+    if args.test_path is None:
+        args.test_path = args.path
+
     dataset = BiopsiesDataset
     if args.dataset == "biopsies":
         train, valid, test, classes = common.datasets.single_image_classification.make_dataset(args, dataset)
@@ -114,10 +121,10 @@ class ImageDataset(Dataset):
 
 class BiopsiesCSVDataset(ImageDataset):
 
-    def __init__(self, df, root_dir, transform, target_transform, shared_transforms, preload, cache, two_class=False):
+    def __init__(self, df, transform, target_transform, shared_transforms, preload, cache, two_class=False):
         self.data = df
-        self.root_dir = root_dir
-        paths = [os.path.join(self.root_dir, x) for x in self.data.image]
+        # self.root_dir = root_dir
+        paths = [os.path.join(rd, x) for x, rd in zip(self.data.image, self.data.root_dir)]
         if not two_class:
             self.ys = {path: target for (path, target) in zip(paths, self.data.target)}
         else:

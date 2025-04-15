@@ -428,10 +428,13 @@ class VitTrainer(Trainer):
                 x = data.to(self.device)
                 data, target = data.to(self.device), target.to(self.device)
                 if mixup_fn is not None:
+                    if data.shape[0] % 2 != 0:
+                        data = data[:-1]
+                        target = target[:-1]
                     data, target = mixup_fn(data, target)
                 
                 
-                output = model(x) #model(x, labels=target)
+                output = model(data) #model(x, labels=target)
                 if hasattr(output, 'loss'):
                     loss = output.loss
                 else:

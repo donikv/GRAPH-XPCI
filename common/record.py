@@ -29,7 +29,7 @@ class Record():
     
     @staticmethod
     def load(path: str, map_location='cpu') -> 'Record':
-        record = torch.load(path, map_location=map_location)
+        record = torch.load(path, map_location=map_location, weights_only=False) #Keep old behaviour, fix with `torch.serialization.add_safe_globals(
         #Backward compatibility
         if not hasattr(record, 'checkpoints'):
             record.checkpoints = {}

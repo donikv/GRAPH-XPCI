@@ -20,18 +20,24 @@ def balance_df(df, args, groupby='target'):
 def make_csv_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list):
     transform, transform_test = make_base_transforms(args)
     root = args.path
-    csv_path = args.train_csv
-    csv_path_test = args.test_csv
-    train_df = pd.read_csv(csv_path)
+    train_df = pd.DataFrame()
+    for path, csv_path in zip(args.path, args.train_csv):
+        df = pd.read_csv(csv_path)
+        df['root_dir'] = path
+        train_df = pd.concat([df, train_df])
     if args.balance_dataset:
         train_df = balance_df(train_df, args, groupby=['type', 'target'])
         # train_df = balance_df(train_df, args, groupby='target')
-    test_df = pd.read_csv(csv_path_test)
+    test_df = pd.DataFrame()
+    for path, csv_path in zip(args.test_path, args.test_csv):
+        df = pd.read_csv(csv_path)
+        df['root_dir'] = path
+        test_df = pd.concat([df, test_df])
     val_df, test1_df = split(test_df, test_size=0.5, random_state=args.seed)
     
-    dataset1 = dataset(train_df, root, transform=transform, shared_transforms=None, target_transform=None, preload=False, cache=False)
-    dataset2 = dataset(val_df, root, transform=transform_test, shared_transforms=None, target_transform=None, preload=False, cache=False)
-    dataset_test = dataset(test_df, root, transform=transform_test, shared_transforms=None, target_transform=None, preload=False, cache=False)
+    dataset1 = dataset(train_df, transform=transform, shared_transforms=None, target_transform=None, preload=False, cache=False)
+    dataset2 = dataset(val_df, transform=transform_test, shared_transforms=None, target_transform=None, preload=False, cache=False)
+    dataset_test = dataset(test_df, transform=transform_test, shared_transforms=None, target_transform=None, preload=False, cache=False)
     return dataset1, dataset2, dataset_test, sorted(train_df.target.unique())
 
 def make_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list):
