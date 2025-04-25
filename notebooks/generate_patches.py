@@ -98,6 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--include', nargs='*', help='Images to include', default=[])
     parser.add_argument('--patch_size', type=int, default=None, help='Patch size to use')
+    # parser.add_argument('--output_format', type=str, default='tif', help='Output format of the patches')
 
     args = parser.parse_args()
 
