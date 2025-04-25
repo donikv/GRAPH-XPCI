@@ -24,5 +24,6 @@ dependencies = [
     "wandb",
     "patchify",
     "tabulate",
-    "jupyterlab"
+    "jupyterlab",
+    "einops>=0.8.1",
 ]
