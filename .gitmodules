@@ -1,0 +1,3 @@
+[submodule "LoRA-ViT"]
+	path = submodules/LoRA-ViT
+	url = https://github.com/JamesQFreeman/LoRA-ViT.git
