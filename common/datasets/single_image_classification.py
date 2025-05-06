@@ -17,7 +17,7 @@ def balance_df(df, args, groupby='target'):
         )
     return ndf
 
-def make_csv_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list):
+def make_csv_dataset(args, dataset: Dataset) -> tuple[Dataset, Dataset, Dataset, list]:
     transform, transform_test = make_base_transforms(args)
     root = args.path
     train_df = pd.DataFrame()
@@ -40,7 +40,7 @@ def make_csv_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list
     dataset_test = dataset(test_df, transform=transform_test, shared_transforms=None, target_transform=None, preload=False, cache=False)
     return dataset1, dataset2, dataset_test, sorted(train_df.target.unique())
 
-def make_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list):
+def make_dataset(args, dataset: Dataset) -> tuple[Dataset, Dataset, Dataset, list]:
     transform, transform_test = make_base_transforms(args)
     
     data = np.loadtxt(args.list, dtype=str)

@@ -8,7 +8,7 @@ from common.utils import data_for_type
 from common.datasets.dataset_transforms import make_base_transforms
 
 
-def make_dataset(args, dataset: Dataset) -> (Dataset, Dataset, Dataset, list):
+def make_dataset(args, dataset: Dataset) -> tuple[Dataset, Dataset, Dataset, list]:
     transform, transform_test = make_base_transforms(args)
     
     data = np.loadtxt(args.list, dtype=str)
