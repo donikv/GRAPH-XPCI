@@ -61,6 +61,9 @@ def main(args):
         for include in args.include:
             df_new = pd.concat([df_new, df[df.image.str.contains(include)]])
         df = df_new
+    if len(args.exclude) > 0:
+        for exclude in args.exclude:
+            df = df[~df.image.str.contains(exclude)]
     df2 = pd.read_csv(args.images_csv_path)
 
     stacked = df
@@ -97,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--equalize', action='store_true', default=False)
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--include', nargs='*', help='Images to include', default=[])
+    parser.add_argument('--exclude', nargs='*', help='Images to exclude', default=[])
     parser.add_argument('--patch_size', type=int, default=None, help='Patch size to use')
     # parser.add_argument('--output_format', type=str, default='tif', help='Output format of the patches')
 
