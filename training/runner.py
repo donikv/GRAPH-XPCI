@@ -1,3 +1,4 @@
+from ast import literal_eval
 import sys,os
 sys.path.append(os.getcwd())
 print(os.path.dirname(sys.executable))
@@ -45,6 +46,8 @@ if __name__ == '__main__':
                 value = True
             elif value.lower() == 'false':
                 value = False
+            elif value.startswith('[') and value.endswith(']'):
+                value = value[1:-1].split(',')
             data['args'][key] = value
 
     # Format the arguments

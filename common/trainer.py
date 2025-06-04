@@ -415,7 +415,7 @@ class VitMAETrainer(Trainer):
 class VitTrainer(Trainer):
     def __init__(self, train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger: TensorboardLogger) -> None:
         super().__init__(train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger)
-        self.scaler = torch.cuda.amp.GradScaler()
+        self.scaler = torch.amp.GradScaler('cuda')
     
     def train_step(self, model, train_loader, pred_fn, epoch, log_interval, dry_run=False, batch_scheduler=None, mixup_fn=None):
         model.train()
