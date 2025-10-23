@@ -129,7 +129,24 @@ def main():
     checkpoint = record.Checkpoint(recorder, save, args.checkpoint_interval)
 
     if args.test:
-        model_trainer.test(model, test_dataset, pred_fn, dry_run=args.dry_run)
+        test_acc, test_loss, targets, outputs = model_trainer.test(model, test_dataset, pred_fn, dry_run=args.dry_run, return_tensors=True)
+        targets = torch.tensor(targets).to(torch.device(args.device))
+        outputs = torch.tensor(outputs).to(torch.device(args.device))
+        from torchmetrics import ROC, AUROC
+        roc = ROC("multiclass", num_classes=2).to(torch.device(args.device))
+        roc.update(outputs, targets)
+        roc_auc = roc.compute()
+        # log.log(f"Test ROC AUC: {roc_auc}")
+        f,a = roc.plot(score=True)
+        log.log_figure(f, "ROC AUC")
+
+        roc = ROC("binary", thresholds=100).to(torch.device(args.device))
+        outputs_softmax = torch.softmax(outputs, dim=1)
+        roc.update(outputs_softmax[:,1], targets)
+        roc_auc = roc.compute()
+        # log.log(f"Test ROC AUC: {roc_auc}")
+        f,a = roc.plot(score=True)
+        log.log_figure(f, "ROC AUC BIN")
     else:
         try:
             model_trainer.train(model, train_dataset, valid_dataset, pred_fn, save_callback=save, checkpoint_callback=checkpoint.checkpoint, dry_run=args.dry_run, log_interval=1, mixup_fn=mixup_fn)

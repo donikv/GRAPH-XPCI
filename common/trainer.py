@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, CosineAnnealingW
 from torch.utils.data import Subset
 from common.logger import TensorboardLogger
 import common.utils as utils
+import torchmetrics
 
 from torch.utils.data import Dataset
 #from ignite.contrib import metrics
@@ -169,6 +170,7 @@ class Trainer():
         self.train_args = train_args
         self.test_args = test_args
         self.current_epoch = 1
+        self.scaler = torch.amp.GradScaler('cuda')
     
     def train(self, model, train_dataset: Dataset, test_dataset: Dataset, pred_fn, log_interval=1, dry_run=False, save_callback=None, checkpoint_callback=None, mixup_fn=None):
         self.train_accs, self.test_accs, self.train_losses, self.test_losses = [], [], [], []
@@ -218,9 +220,13 @@ class Trainer():
                 break
             
     
-    def test(self, model, test_dataset: Dataset, pred_fn, dry_run=False):
+    def test(self, model, test_dataset: Dataset, pred_fn, dry_run=False, return_tensors=False):
         test_dataloader = torch.utils.data.DataLoader(test_dataset, **self.test_args)
-        test_acc, test_loss = self.test_step(model, test_dataloader, pred_fn, 0, dry_run=dry_run)
+        if return_tensors:
+            test_acc, test_loss, targets, preds = self.test_step(model, test_dataloader, pred_fn, 0, dry_run=dry_run, return_tensors=return_tensors)
+            self.logger.log("Test Accuracy: " + str(test_acc) + ", Average Loss: " + str(test_loss))
+            return test_acc, test_loss, targets, preds
+        test_acc, test_loss = self.test_step(model, test_dataloader, pred_fn, 0, dry_run=dry_run, return_tensors=False)
         self.logger.log("Test Accuracy: " + str(test_acc) + ", Average Loss: " + str(test_loss))
         return test_acc, test_loss
 
@@ -292,19 +298,20 @@ class Trainer():
                 data, target = data.to(self.device), target.to(self.device)
                 if mixup_fn is not None:
                     data, target = mixup_fn(data, target)
-                self.optimizer.zero_grad()
+                # self.optimizer.zero_grad()
                 output = model(data)
-
                 loss = self.criterion(output, target)
-                loss.backward()
-                self.optimizer.step()
-                # if self.scheduler is not None:
-                #     self.scheduler.step()
+                # loss.backward()
+                # self.optimizer.step()
 
-                train_loss += loss.item()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+            self.optimizer.zero_grad()
+            train_loss += loss.item()
 
-                pred = pred_fn(output)  # get the index of the max log-probability
-                correct += pred.eq(target.view_as(pred)).sum().item()
+            pred = pred_fn(output)  # get the index of the max log-probability
+            correct += pred.eq(target.view_as(pred)).sum().item()
             pbar.set_description(f'Loss: {(train_loss / (batch_idx+1)):.4f}, Accuracy: {(correct)}')
 
             targets.extend(target.cpu().numpy().reshape((-1,)))
@@ -325,12 +332,13 @@ class Trainer():
         
         return f1, train_loss / len(train_dataloader.dataset)
 
-    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False):
+    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False, metric='f1', return_tensors=False):
         model.eval()
         test_loss = 0
         correct = 0
 
         targets, preds = [], []
+        outputs = None
 
         with torch.no_grad():
             for batch_idx, (data, target) in (pbar := tqdm(enumerate(test_loader), total=len(test_loader), ncols=100)):
@@ -344,18 +352,36 @@ class Trainer():
 
                 targets.extend(target.cpu().numpy().reshape((-1,)))
                 preds.extend(pred.cpu().numpy().reshape((-1,)))
+                if outputs is None:
+                    outputs = output.cpu().numpy()
+                else:
+                    outputs = np.concatenate((outputs, output.cpu().numpy()), axis=0)
 
         test_loss /= len(test_loader.dataset)
 
         clr = utils.createClassificationReport(targets, preds, output_dict=True)
-        f1 = clr['macro avg']['f1-score']
+        targets = np.array(targets)
+        if metric == 'f1':
+            metric_score = clr['macro avg']['f1-score']
+        elif metric == 'accuracy':
+            metric_score = correct / len(test_loader.dataset)
+        elif metric == 'mcc_binary':
+            metric_score = torchmetrics.MatthewsCorrCoef('binary')(outputs, targets)
+        elif metric == 'mcc_multiclass':
+            metric_score = torchmetrics.MatthewsCorrCoef('multiclass', num_classes=len(set(targets)))(outputs, targets)
+        elif metric == 'roc_auc_binary':
+            metric_score = torchmetrics.AUROC(num_classes=2)(outputs, targets)
+        elif metric == 'roc_auc_multiclass':
+            metric_score = torchmetrics.AUROC(num_classes=len(set(targets)))(outputs, targets)
         self.logger.log('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset), f1))
+            test_loss, correct, len(test_loader.dataset), metric_score))
         f = self.logger.log_cm(targets, preds, epoch, name=f"{name}_confusion_matrix")
         plt.close(f)
         self.logger.log_classification_report(targets, preds)
-
-        return f1, test_loss / len(test_loader.dataset)
+        if not return_tensors:
+            return metric_score, test_loss / len(test_loader.dataset)
+        else:
+            return metric_score, test_loss / len(test_loader.dataset), targets, outputs
 
 class MAE3DTrainerWrapper(Trainer):
     def __init__(self, train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger: TensorboardLogger) -> None:
@@ -391,7 +417,7 @@ class VitMAETrainer(Trainer):
 
         return running_loss / len(train_loader.dataset), None
     
-    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False):
+    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False, metric='f1', return_tensors=False):
         model.eval()
         running_loss = 0.0
         with torch.no_grad():
@@ -415,7 +441,6 @@ class VitMAETrainer(Trainer):
 class VitTrainer(Trainer):
     def __init__(self, train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger: TensorboardLogger) -> None:
         super().__init__(train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger)
-        self.scaler = torch.amp.GradScaler('cuda')
     
     def train_step(self, model, train_loader, pred_fn, epoch, log_interval, dry_run=False, batch_scheduler=None, mixup_fn=None):
         model.train()
@@ -425,14 +450,12 @@ class VitTrainer(Trainer):
         targets, preds = [], []
         for batch_idx, (data, target) in (pbar := tqdm(enumerate(train_loader), total=len(train_loader), ncols=100)):
             with torch.autocast(device_type=self.device.type, dtype=torch.float16):
-                x = data.to(self.device)
                 data, target = data.to(self.device), target.to(self.device)
                 if mixup_fn is not None:
                     if data.shape[0] % 2 != 0:
                         data = data[:-1]
                         target = target[:-1]
                     data, target = mixup_fn(data, target)
-                
                 
                 output = model(data) #model(x, labels=target)
                 if hasattr(output, 'loss'):
@@ -481,11 +504,12 @@ class VitTrainer(Trainer):
         
         return f1, running_loss / len(train_loader.dataset)
     
-    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False):
+    def test_step(self, model, test_loader, pred_fn, epoch, name="Valid", dry_run=False, metric='f1', return_tensors=False):
         model.eval()
         running_loss = 0.0
         correct = 0
         targets, preds = [], []
+        outputs = None
         with torch.no_grad():
             for batch_idx, (x, target) in (pbar := tqdm(enumerate(test_loader), total=len(test_loader), ncols=100)):
                 with torch.autocast(device_type=self.device.type, dtype=torch.float16):
@@ -510,21 +534,40 @@ class VitTrainer(Trainer):
 
                 targets.extend(target.cpu().numpy().reshape((-1,)))
                 preds.extend(pred.cpu().detach().numpy().reshape((-1,)))
-
+                if outputs is None:
+                    outputs = output.logits.cpu().numpy() if hasattr(output, 'logits') else output.cpu().numpy()
+                else:
+                    output = output.logits.cpu().numpy() if hasattr(output, 'logits') else output.cpu().numpy()
+                    outputs = np.concatenate((outputs, output), axis=0)
                 if dry_run:
                     break
 
             log_interval = self.log_interval if hasattr(self, 'log_interval') else 1
             clr = utils.createClassificationReport(targets, preds, output_dict=True)
-            f1 = clr['macro avg']['f1-score']
+            targets = np.array(targets)
+            if metric == 'f1':
+                metric_score = clr['macro avg']['f1-score']
+            elif metric == 'accuracy':
+                metric_score = correct / len(test_loader.dataset)
+            elif metric == 'mcc_binary':
+                metric_score = torchmetrics.MatthewsCorrCoef('binary')(outputs, targets)
+            elif metric == 'mcc_multiclass':
+                metric_score = torchmetrics.MatthewsCorrCoef('multiclass', num_classes=len(set(targets)))(outputs, targets)
+            elif metric == 'roc_auc_binary':
+                metric_score = torchmetrics.AUROC(num_classes=2)(outputs, targets)
+            elif metric == 'roc_auc_multiclass':
+                metric_score = torchmetrics.AUROC(num_classes=len(set(targets)))(outputs, targets)
             self.logger.log('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-                running_loss, correct, len(test_loader.dataset), f1))
+                running_loss, correct, len(test_loader.dataset), metric_score))
             if epoch % log_interval == 0:
                 f = self.logger.log_cm(targets, preds, epoch, name=f"{name}_confusion_matrix")
                 plt.close(f)
                 self.logger.log_classification_report(targets, preds)
 
-        return f1, running_loss / len(test_loader.dataset)
+        if not return_tensors:
+            return metric_score, running_loss / len(test_loader.dataset)
+        else:
+            return metric_score, running_loss / len(test_loader.dataset), targets, outputs
 
 class VAETrainer(Trainer):
     def __init__(self, train_args, test_args, optimizer, criterion, scheduler, epochs, device, logger: TensorboardLogger) -> None:
