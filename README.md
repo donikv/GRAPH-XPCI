@@ -11,6 +11,14 @@ To facilitate the use of the dataset across different evaluation protocols, `.cs
 The protocols and evaluation splits are designed such that there is no overlap between evaluation and training samples, to ensure no data leakage and fair comparison.
 The whole dataset and the `csv` files are available [here](https://puh.srce.hr/s/f8p5fnxTfcH4HXy).
 
+### Train/test biopsies
+The biopsies are split into train and test. Below is an example of some of the biopsies used for test and train (the rest can be found in corresponding train/test csv files)
+
+| Split | Biopsies                                                                       |
+| :----:| :----------------------------------------------------------------------------: |
+| train |  '49_101-55.5_HA_S3', '38_201-01.2_S2', '014_101_08_HA_S2'                     |
+| test  |  '014_101_08_HA_S1', '38_201-01.2_S1', '49_101-55.5_HA_S2', '014_101_08_HA_S3' | 
+
 ## Code structure
 
 The code used to load the dataset, load pre-trained models, run experiments, and evaluate the results on the GRAFT-XPCI dataset (among other things) is structured as follows:
