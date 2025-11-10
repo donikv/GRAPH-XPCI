@@ -1,0 +1,54 @@
+args:
+  log: records/mix/ViT_B_lora
+  mae_path: records/test_vit_mae_patches_new2/test.pt
+  lora_rank: 16
+  lora_alpha: 4
+
+  #DATASET  
+  dataset: csv
+  train-csv: [../data/train_patches/train_new.csv, ../data/patches_constrained/train.csv, ../data/patches_new_0R/train_new.csv, ../data/gen_csv/train.csv]
+  test-csv: [../data/test_patches/test_new.csv]
+  path: [../data/train_patches, ../data/patches_constrained, ../data/patches_new_0R, ../data]
+  test-path: [../data/test_patches]
+  # train-csv: [/storage/home/dvrsnak/gen_csv/train.csv, /storage/home/dvrsnak/train_patches/train_new.csv, /storage/home/dvrsnak/train_patches/train_new.csv]
+  # test-csv: [/storage/home/dvrsnak/test_patches/test_new.csv]
+  # path: [/storage/home/dvrsnak, /storage/home/dvrsnak/train_patches, /storage/home/dvrsnak/train_patches]
+  # test-path: [/storage/home/dvrsnak/test_patches]
+  
+  normalize: true
+  size: 224
+  crop-size: 224
+  balance-dataset: true
+  histogram-equalization: true
+  rotation: 20
+  perspective: 0.1
+  
+  #MODEL
+  patch-size: 16
+  patch-norm: true
+  in-channels: 1
+  latent-dim: 768
+  encoder-depth: 12
+  encoder-num-heads: 12
+  encoder-intermediate-size: 2048
+  decoder-latent-dim: 512
+  decoder-depth: 8
+  decoder-num-heads: 8 
+  decoder-intermediate-size: 1024
+
+  #TRAINING
+  batch-size: 768
+  test-batch-size: 768
+  epochs: 30
+  scheduler: OneCycleLR
+  optimizer: adamw
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  wd: 0.05
+  lr: 1e-4
+  #layer-decay: 0.75
+  #mixup: 0.8
+  smoothing: 0.1
+  #cutmix: 1.0
+
+python_file: training/regression_vit_lora.py

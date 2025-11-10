@@ -1,0 +1,49 @@
+args:
+  log: records/patches/ViT_B
+
+  mae_path: records/test_vit_mae_patches_new2/test.pt
+
+  #DATASET  
+  dataset: csv
+  train-csv: [/storage/home/dvrsnak/gen_csv/train.csv,/storage/home/dvrsnak/gen_csv/test.csv]
+  test-csv: [/storage/home/dvrsnak/patches/train.csv]
+  path: [/storage/home/dvrsnak, /storage/home/dvrsnak]
+  test-path: [/storage/home/dvrsnak/patches]
+  
+  normalize: true
+  size: 224
+  crop-size: 224
+  balance-dataset: true
+  histogram-equalization: true
+  rotation: 20
+  perspective: 0.1
+  
+  #MODEL
+  patch-size: 16
+  patch-norm: true
+  in-channels: 1
+  latent-dim: 768
+  encoder-depth: 12
+  encoder-num-heads: 12
+  encoder-intermediate-size: 2048
+  decoder-latent-dim: 512
+  decoder-depth: 8
+  decoder-num-heads: 8 
+  decoder-intermediate-size: 1024
+
+  #TRAINING
+  batch-size: 600
+  test-batch-size: 600
+  epochs: 10
+  scheduler: ReduceLROnPlateau
+  optimizer: adamw
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  wd: 0.05
+  lr: 1e-4
+  layer-decay: 0.75
+  mixup: 0.8
+  # smoothing: 0.1
+  cutmix: 1.0
+
+python_file: training/regression_vit.py

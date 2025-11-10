@@ -1,28 +1,26 @@
 args:
-  log: records/patches/ViT_B
+  log: records/patches/ViT_B_lora
   mae_path: records/test_vit_mae_patches_new2/test.pt
+  lora_rank: 16
+  lora_alpha: 4
 
   #DATASET  
   dataset: csv
-  train-csv: [data/stella/train.csv]
-  test-csv: [data/stella/test.csv]
-  # train-csv: [../data/train_patches/train_new.csv, ../data/patches_constrained/train.csv, ../data/patches_new_0R/train_new.csv]
-  # test-csv: [../data/test_patches/test_new.csv]
+  train-csv: [../data/train_patches/train_new.csv, ../data/patches_constrained/train.csv, ../data/patches_new_0R/train_new.csv]
+  test-csv: [../data/test_patches/test_new.csv]
   # train-csv: [/storage/home/dvrsnak/train_patches/train_new.csv]
   # test-csv: [/storage/home/dvrsnak/test_patches/test_new.csv]
   # path: [/storage/home/dvrsnak/train_patches]
   # test-path: [/storage/home/dvrsnak/test_patches]  
-  # path: [../data/train_patches, ../data/patches_constrained, ../data/patches_new_0R]
-  # test-path: [../data/test_patches]
-  path: [../data/stella/]
-  test-path: [../data/test_patches/]
+  path: [../data/train_patches, ../data/patches_constrained, ../data/patches_new_0R]
+  test-path: [../data/test_patches]
   
   normalize: true
   size: 224
   crop-size: 224
-  balance-dataset: false
-  histogram-equalization: false
-  rotation: 0
+  balance-dataset: true
+  histogram-equalization: true
+  rotation: 30
   perspective: 0.1
   
   #MODEL
@@ -39,18 +37,18 @@ args:
   decoder-intermediate-size: 1024
 
   #TRAINING
-  batch-size: 300
-  test-batch-size: 300
-  epochs: 60
+  batch-size: 600
+  test-batch-size: 600
+  epochs: 30  
   scheduler: OneCycleLR
   optimizer: adamw
   adam_beta1: 0.9
-  adam_beta2: 0.999
-  wd: 1e-3
+  adam_beta2: 0.95
+  wd: 0.05
   lr: 1e-4
-  layer-decay: 0.75
-  # mixup: 0.8
-  smoothing: 0.1
-  # cutmix: 1.0
+  #layer-decay: 0.75
+  #mixup: 0.8
+  smoothing: 0.2
+  #cutmix: 1.0
 
-python_file: training/regression_vit.py
+python_file: training/regression_vit_lora.py
