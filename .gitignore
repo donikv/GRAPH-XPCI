@@ -10,6 +10,11 @@ test/
 data/biopsies_patches_fresh*
 data/biopsies_new_patches_192*
 data/**
+*pbs
+dira.ipynb
+submodules/sam_segmentation/**
+
+
 
 #VS code
 .vscode/
