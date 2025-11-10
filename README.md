@@ -15,6 +15,7 @@ The whole dataset and the `csv` files are available [here](https://puh.srce.hr/s
 The biopsies are split into train and test. Below is an example of some of the biopsies used for test and train (the rest can be found in corresponding train/test csv files)
 
 | Split | Biopsies                                                                       |
+| :----:| :----------------------------------------------------------------------------: |
 | train |  '49_101-55.5_HA_S3', '38_201-01.2_S2', '014_101_08_HA_S2'                     |
 | test  |  '014_101_08_HA_S1', '38_201-01.2_S1', '49_101-55.5_HA_S2', '014_101_08_HA_S3' | 
 
